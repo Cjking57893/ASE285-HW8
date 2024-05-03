@@ -1,8 +1,12 @@
 'use strict'
 const fs = require('fs');
-const {readFile, writeFile, hash} = require('./utility')
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const users = require('../models/Users')
+const {readFile, writeFile, hash} = require('./utility');
+dotenv.config();
 
-function makepassword(passwordFileName, passwordEncFileName) {
+async function makepassword(passwordFileName, passwordEncFileName) {
     const passwordFile = readFile(passwordFileName);
 
     const emails = passwordFile.map(line => {
@@ -24,7 +28,31 @@ function makepassword(passwordFileName, passwordEncFileName) {
 }
 
 if (require.main === module) {
-    makepassword('./password.txt', './password.enc.txt')
+    (async () => {
+        try {
+            await makepassword('./password.txt', './password.enc.txt');
+
+            let accounts = await readFile('./password.enc.txt'); // Await readFile
+
+            await mongoose.connect(process.env.MONGO_URI);
+
+            for (let account of accounts) { // Using for...of loop
+                let [email, password] = account.split(':');
+
+                let user = new users({
+                    email: email,
+                    password: password
+                });
+
+                await user.save();
+            }
+
+            await mongoose.connection.close();
+            console.log("Added users from password.txt to database.");
+        } catch (err) {
+            console.error(err);
+        }
+    })();
 }
 
 module.exports = {makepassword};

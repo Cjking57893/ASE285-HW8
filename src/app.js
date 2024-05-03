@@ -16,3 +16,17 @@ async function main() {
         console.error(err);
     }
 }
+
+async function login() {
+    if (process.argv.length != 4) {
+        mongoose.connection.close();
+        return false;
+    }
+
+    const email = process.argv[2];
+    const password = process.argv[3];
+}
+
+if (require.main === module) {
+    await login();
+}
