@@ -3,7 +3,7 @@
 const mongoose = require('mongoose');
 const users = require('../models/Users');
 const dotenv = require('dotenv');
-const util = require('./utility');
+const {readFile, writeFile, hash} = require('./utility');
 dotenv.config();
 
 main().catch(err => console.log(err));
@@ -25,8 +25,20 @@ async function login() {
 
     const email = process.argv[2];
     const password = process.argv[3];
+
+    let user = await users.findOne({email: email});
+    if (user.password == hash(password)) {
+        await mongoose.connection.close();
+        return true;
+    }
+    else {
+        await mongoose.connection.close();
+        return false;
+    }
 }
 
 if (require.main === module) {
-    await login();
+    (async () => {
+        console.log(await login())
+    })();
 }
